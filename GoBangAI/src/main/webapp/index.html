@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="jQuery-3.3.1.min.js"></script>
+    <script src="exchangeData.js"></script>
+    <style>
+        .back {
+            width: 600px;
+            height: 600px;
+            border: solid 1px black;
+            margin: 0 auto;
+            background-image: url("images/index.jpg");
+            box-shadow: 12px 9px 18px 7px rgba(138, 138, 138, 0.78);
+        }
+
+        .btnDiv {
+            display: flex;
+            justify-content: center;
+        }
+
+        .beginBtn {
+            padding: 10px;
+            font-size: 18px;
+            background-color: #90816ab8;
+            border: solid 1px rgba(0, 0, 0, 0.7);
+            font-family: "微软雅黑 Light";
+            font-weight: lighter;
+            color: #e4e4e4;
+            margin-top: 20px;
+            border-radius: 15px;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+<div class="back">
+    <canvas class="can" width="600" height="600">
+    </canvas>
+</div>
+<div class="btnDiv">
+    <button class="beginBtn">开始游戏</button>
+</div>
+
+</body>
+<script>
+    var board = JSON.parse(getCookie("board"))
+    $(function () {
+        var canvas = $(".can");
+        var ctx = $(".can")[0].getContext('2d');
+        var w = canvas.width();
+        var h = canvas.height();
+        var vw = w / 15;
+        var vh = h / 15;
+        var x = 0, y = 0;
+        for (var i = 0; i < 15; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.closePath();
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.closePath();
+            x += vw;
+            y += vh;
+        }
+
+        document.getElementsByTagName("canvas")[0].onclick = function (e) {
+            var obj = getLocation(e.clientX, e.clientY);
+            obj.x = Math.round(obj.x / vw) * vw;
+            obj.y = Math.round(obj.y / vh) * vh;
+            console.log("(" +
+                Math.round(obj.y / vh) + "," + Math.round(obj.x / vw) + "）"
+            );
+            board[Math.round(obj.y / vh)][Math.round(obj.x / vw)] = 1
+            aiPoint(JSON.stringify(board).toString())
+
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+            ctx.closePath();
+
+        };
+
+        function getLocation(x, y) {
+            var bbox = $(".can")[0].getBoundingClientRect();
+            return {
+                x: (x - bbox.left) * ($(".can")[0].width / bbox.width),
+                y: (y - bbox.top) * ($(".can")[0].height / bbox.height)
+            };
+        }
+
+        function black(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function aiPoint(boardStr) {
+            console.log(boardStr)
+
+            $.ajax({
+                type: "POST",
+                url: "http://127.0.0.1:8080/ai",
+                data: boardStr,
+                contentType: "application/json",
+                dataType: "json",
+                complete: function (msg) {
+                    console.log(msg.responseJSON)
+                    if (msg.responseJSON[2] === -1) {
+                        alert("人类胜利")
+                    } else {
+                        if (msg.responseJSON[2] === -2) {
+                            alert("机器胜利")
+                        }
+                        board[msg.responseJSON[0]][msg.responseJSON[1]] = 2
+                        black(msg.responseJSON[1] * 40, msg.responseJSON[0] * 40);
+                    }
+                },
+                error: function (msg) {
+                    console.log("error")
+                }
+            });
+        }
+    })
+
+
+</script>
+
+</html>

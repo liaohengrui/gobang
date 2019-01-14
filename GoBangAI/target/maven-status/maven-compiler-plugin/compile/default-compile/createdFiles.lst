@@ -1,0 +1,7 @@
+core\Test.class
+core\ValuationFunction.class
+core\Gen.class
+core\Score.class
+com\controller\AIContro.class
+core\Role.class
+core\MaxMin.class
